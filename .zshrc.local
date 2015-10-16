@@ -1,5 +1,5 @@
 # .zshrc additonal
 alias emacs='emacs -nw'
 alias sshcoins='ssh -p 2222 localcoin'
-alias fgrep='grep -R -f . '
+alias cgrep='grep -R -f . '
 export EDITOR=emacs
