@@ -31,7 +31,7 @@ then
 	echo "File exists: ~/.zshrc"
 
 	# Attempt append
-	if [ grep -q ". ~/.zshrc.local" ]
+	if grep -q ". ~/.zshrc.local" ~/.zshrc
 	then
 
 		echo ". ~/.zshrc.local" >> ~/.zshrc
@@ -64,7 +64,16 @@ then
 
 else
 
-	ln -s "${dir}/coins-server.sh" /etc/init/coins-server.sh
+	if [ ! -d /etc/init ]
+	then
+
+		echo "Directory doesn't exist: /etc/init"
+
+	else
+
+		ln -s "${dir}/coins-server.sh" /etc/init/coins-server.sh
+
+	fi
 
 fi
 
