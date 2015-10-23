@@ -57,10 +57,10 @@ else
 fi
 
 # coins-server.sh
-if [ -e /etc/init/coins-server.sh ]
+if [ -e /etc/init/coins-server.conf ]
 then
 
-	echo "File exists: coins-server.sh"
+	echo "File exists: coins-server.conf"
 
 else
 
@@ -71,7 +71,7 @@ else
 
 	else
 
-		ln -s "${dir}/coins-server.sh" /etc/init/coins-server.sh
+		sudo ln -s "${dir}/coins-server.sh" /etc/init/coins-server.conf
 
 	fi
 
