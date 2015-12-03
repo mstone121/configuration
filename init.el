@@ -46,6 +46,13 @@
 				   (setq emmet-use-css-transform t)
 				 (setq emmet-use-css-transform nil)))))
 
+
+(defun php-debug-var (str) 
+  "Insert php print_r debug text."
+  (interactive "*sPHP Var: ")
+  (insert (concat "echo '<pre>'.print_r(" str ", true).'</pre>';")))
+          
+
 ;; Save all tempfiles in $TMPDIR/emacs$UID/
 (defconst emacs-tmp-dir (format "%s/%s/%s/" temporary-file-directory "emacs" (user-uid)))
 (setq backup-directory-alist
