@@ -9,10 +9,11 @@
 
 (setq my:el-get-packages
       '(web-mode
-	rainbow-mode
-	helm
-	yasnippet
-	auto-complete	
+        rainbow-mode
+        helm
+        yasnippet
+        auto-complete
+        js2-mode
 	))
 
 (el-get 'sync my:el-get-packages)
