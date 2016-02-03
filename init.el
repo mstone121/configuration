@@ -14,6 +14,7 @@
         yasnippet
         auto-complete
         js2-mode
+        geben
 	))
 
 (el-get 'sync my:el-get-packages)
