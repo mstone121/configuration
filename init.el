@@ -16,7 +16,6 @@
         auto-complete
         csv-mode
         js2-mode
-        geben
 	))
 
 (el-get 'sync my:el-get-packages)
