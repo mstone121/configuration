@@ -1,4 +1,5 @@
 (add-to-list 'load-path "~/.emacs.d/el-get/el-get")
+(add-to-list 'load-path "~/.emacs.d/geben/")
 
 (unless (require 'el-get nil t)
   (url-retrieve
@@ -9,13 +10,16 @@
 
 (setq my:el-get-packages
       '(web-mode
-	rainbow-mode
-	helm
-	yasnippet
-	auto-complete	
+        rainbow-mode
+        helm
+        yasnippet
+        auto-complete
+        csv-mode
 	))
 
 (el-get 'sync my:el-get-packages)
+
+(autoload 'geben "~/.emacs.d/geben/geben.el" "PHP Debugger on Emacs" t)
 
 (require 'web-mode)
 (add-to-list 'auto-mode-alist '("\\.phtml\\'" . web-mode))
@@ -61,6 +65,11 @@
 	  `((".*" ,emacs-tmp-dir t)))
 (setq auto-save-list-file-prefix
 	  emacs-tmp-dir)
+
+;; Save place in file
+(setq save-place-file "~/.emacs.d/saveplace") ;; keep my ~/ clean
+(setq-default save-place t)                   ;; activate it for all buffers
+(require 'saveplace)                          ;; get the package
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
