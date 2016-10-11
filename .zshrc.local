@@ -7,3 +7,7 @@ export SHELL=`which zsh`
 cgrep() {
 	grep -R $1 .
 }
+
+ngrep() {
+        grep -R --exclude-dir=node_modules $1 . 
+}
