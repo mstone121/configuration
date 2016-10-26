@@ -450,36 +450,35 @@ fi
 check_com() {
     emulate -L zsh
     local -i comonly gatoo
+    comonly=0
+    gatoo=0
 
     if [[ $1 == '-c' ]] ; then
-        (( comonly = 1 ))
-        shift
+        comonly=1
+        shift 1
     elif [[ $1 == '-g' ]] ; then
-        (( gatoo = 1 ))
-    else
-        (( comonly = 0 ))
-        (( gatoo = 0 ))
+        gatoo=1
+        shift 1
     fi
 
     if (( ${#argv} != 1 )) ; then
-        printf 'usage: check_com [-c] <command>\n' >&2
+        printf 'usage: check_com [-c|-g] <command>\n' >&2
         return 1
     fi
 
     if (( comonly > 0 )) ; then
-        [[ -n ${commands[$1]}  ]] && return 0
+        (( ${+commands[$1]}  )) && return 0
         return 1
     fi
 
-    if   [[ -n ${commands[$1]}    ]] \
-      || [[ -n ${functions[$1]}   ]] \
-      || [[ -n ${aliases[$1]}     ]] \
-      || [[ -n ${reswords[(r)$1]} ]] ; then
-
+    if     (( ${+commands[$1]}    )) \
+        || (( ${+functions[$1]}   )) \
+        || (( ${+aliases[$1]}     )) \
+        || (( ${+reswords[(r)$1]} )) ; then
         return 0
     fi
 
-    if (( gatoo > 0 )) && [[ -n ${galiases[$1]} ]] ; then
+    if (( gatoo > 0 )) && (( ${+galiases[$1]} )) ; then
         return 0
     fi
 
@@ -805,9 +804,16 @@ grmlcomp() {
     # command for process lists, the local web server details and host completion
     zstyle ':completion:*:urls' local 'www' '/var/www/' 'public_html'
 
-    # caching
-    [[ -d $ZSHDIR/cache ]] && zstyle ':completion:*' use-cache yes && \
-                            zstyle ':completion::complete:*' cache-path $ZSHDIR/cache/
+    # Some functions, like _apt and _dpkg, are very slow. We can use a cache in
+    # order to speed things up
+    if [[ ${GRML_COMP_CACHING:-yes} == yes ]]; then
+        GRML_COMP_CACHE_DIR=${GRML_COMP_CACHE_DIR:-${ZDOTDIR:-$HOME}/.cache}
+        if [[ ! -d ${GRML_COMP_CACHE_DIR} ]]; then
+            command mkdir -p "${GRML_COMP_CACHE_DIR}"
+        fi
+        zstyle ':completion:*' use-cache  yes
+        zstyle ':completion:*:complete:*' cache-path "${GRML_COMP_CACHE_DIR}"
+    fi
 
     # host completion
     if is42 ; then
@@ -1580,8 +1586,6 @@ function command_not_found_handler() {
 
 # history
 
-ZSHDIR=${ZDOTDIR:-${HOME}/.zsh}
-
 #v#
 HISTFILE=${ZDOTDIR:-${HOME}}/.zsh_history
 isgrmlcd && HISTSIZE=500  || HISTSIZE=5000
@@ -1592,50 +1596,53 @@ isgrmlcd && SAVEHIST=1000 || SAVEHIST=10000 # useful for setopt append_history
 DIRSTACKSIZE=${DIRSTACKSIZE:-20}
 DIRSTACKFILE=${DIRSTACKFILE:-${ZDOTDIR:-${HOME}}/.zdirs}
 
-typeset -gaU GRML_PERSISTENT_DIRSTACK
-function grml_dirstack_filter() {
-    local -a exclude
-    local filter entry
-    if zstyle -s ':grml:chpwd:dirstack' filter filter; then
-        $filter $1 && return 0
-    fi
-    if zstyle -a ':grml:chpwd:dirstack' exclude exclude; then
-        for entry in "${exclude[@]}"; do
-            [[ $1 == ${~entry} ]] && return 0
-        done
-    fi
-    return 1
-}
-
-chpwd() {
-    (( $DIRSTACKSIZE <= 0 )) && return
-    [[ -z $DIRSTACKFILE ]] && return
-    grml_dirstack_filter $PWD && return
-    GRML_PERSISTENT_DIRSTACK=(
-        $PWD "${(@)GRML_PERSISTENT_DIRSTACK[1,$DIRSTACKSIZE]}"
-    )
-    builtin print -l ${GRML_PERSISTENT_DIRSTACK} >! ${DIRSTACKFILE}
-}
-
-if [[ -f ${DIRSTACKFILE} ]]; then
-    # Enabling NULL_GLOB via (N) weeds out any non-existing
-    # directories from the saved dir-stack file.
-    dirstack=( ${(f)"$(< $DIRSTACKFILE)"}(N) )
-    # "cd -" won't work after login by just setting $OLDPWD, so
-    [[ -d $dirstack[1] ]] && cd -q $dirstack[1] && cd -q $OLDPWD
-fi
-
-if zstyle -T ':grml:chpwd:dirstack' filter-on-load; then
-    for i in "${dirstack[@]}"; do
-        if ! grml_dirstack_filter "$i"; then
-            GRML_PERSISTENT_DIRSTACK=(
-                "${GRML_PERSISTENT_DIRSTACK[@]}"
-                $i
-            )
+if zstyle -T ':grml:chpwd:dirstack' enable; then
+    typeset -gaU GRML_PERSISTENT_DIRSTACK
+    function grml_dirstack_filter() {
+        local -a exclude
+        local filter entry
+        if zstyle -s ':grml:chpwd:dirstack' filter filter; then
+            $filter $1 && return 0
         fi
-    done
-else
-    GRML_PERSISTENT_DIRSTACK=( "${dirstack[@]}" )
+        if zstyle -a ':grml:chpwd:dirstack' exclude exclude; then
+            for entry in "${exclude[@]}"; do
+                [[ $1 == ${~entry} ]] && return 0
+            done
+        fi
+        return 1
+    }
+
+    chpwd() {
+        (( ZSH_SUBSHELL )) && return
+        (( $DIRSTACKSIZE <= 0 )) && return
+        [[ -z $DIRSTACKFILE ]] && return
+        grml_dirstack_filter $PWD && return
+        GRML_PERSISTENT_DIRSTACK=(
+            $PWD "${(@)GRML_PERSISTENT_DIRSTACK[1,$DIRSTACKSIZE]}"
+        )
+        builtin print -l ${GRML_PERSISTENT_DIRSTACK} >! ${DIRSTACKFILE}
+    }
+
+    if [[ -f ${DIRSTACKFILE} ]]; then
+        # Enabling NULL_GLOB via (N) weeds out any non-existing
+        # directories from the saved dir-stack file.
+        dirstack=( ${(f)"$(< $DIRSTACKFILE)"}(N) )
+        # "cd -" won't work after login by just setting $OLDPWD, so
+        [[ -d $dirstack[1] ]] && cd -q $dirstack[1] && cd -q $OLDPWD
+    fi
+
+    if zstyle -t ':grml:chpwd:dirstack' filter-on-load; then
+        for i in "${dirstack[@]}"; do
+            if ! grml_dirstack_filter "$i"; then
+                GRML_PERSISTENT_DIRSTACK=(
+                    "${GRML_PERSISTENT_DIRSTACK[@]}"
+                    $i
+                )
+            fi
+        done
+    else
+        GRML_PERSISTENT_DIRSTACK=( "${dirstack[@]}" )
+    fi
 fi
 
 # directory based profiles
@@ -2229,7 +2236,7 @@ grml_theme_add_token: <pre> and <post> need to by specified _both_!\n\n'
 
     if grml_theme_has_token $name; then
         printf '
-grml_theme_add_token: Token '%s'\'' exists! Giving up!\n\n' $name
+grml_theme_add_token: Token `%s'\'' exists! Giving up!\n\n' $name
         GRML_theme_add_token_usage
         return 2
     fi
@@ -2353,9 +2360,7 @@ function prompt_grml_precmd_worker () {
 
 grml_prompt_fallback() {
     setopt prompt_subst
-    precmd() {
-        (( ${+functions[vcs_info]} )) && vcs_info
-    }
+    local p0 p1
 
     p0="${RED}%(?..%? )${WHITE}${debian_chroot:+($debian_chroot)}"
     p1="${BLUE}%n${NO_COLOR}@%m %40<...<%B%~%b%<< "'${vcs_info_msg_0_}'"%# "
@@ -2364,7 +2369,6 @@ grml_prompt_fallback() {
     else
         PROMPT="${RED}${p0}${BLUE}${p1}"
     fi
-    unset p0 p1
 }
 
 if zrcautoload promptinit && promptinit 2>/dev/null ; then
@@ -2377,6 +2381,7 @@ if zrcautoload promptinit && promptinit 2>/dev/null ; then
 else
     print 'Notice: no promptinit available :('
     grml_prompt_fallback
+    precmd() { (( ${+functions[vcs_info]} )) && vcs_info; }
 fi
 
 if is437; then
@@ -2409,6 +2414,7 @@ if is437; then
     fi
 else
     grml_prompt_fallback
+    precmd() { (( ${+functions[vcs_info]} )) && vcs_info; }
 fi
 
 # Terminal-title wizardry
@@ -2590,7 +2596,7 @@ http://deb.grml.org/ or (preferably) get it from the git repository:
 
   http://git.grml.org/f/grml-etc-core/etc/zsh/zshrc
 
-This version of grmls zsh setup does not use skel/.zshrc anymore.
+This version of grml'\''s zsh setup does not use skel/.zshrc anymore.
 The file is still there, but it is empty for backwards compatibility.
 
 For your own changes use these two files:
@@ -2605,7 +2611,7 @@ can take place in /etc/zsh/zshrc.local.
 
 For information regarding zsh start at http://grml.org/zsh/
 
-Take a look at grmls zsh refcard:
+Take a look at grml'\''s zsh refcard:
 % xpdf =(zcat /usr/share/doc/grml-docs/zsh/grml-zsh-refcard.pdf.gz)
 
 Check out the main zsh refcard:
@@ -2635,7 +2641,7 @@ the zsh yet. :)
 
 A value greater than 0 is enables a feature; a value equal to zero
 disables it. If you like one or the other of these settings, you can
-add them to ~/.zshrc.pre to ensure they are set when sourcing grmls
+add them to ~/.zshrc.pre to ensure they are set when sourcing grml'\''s
 zshrc.'
 
     print "
@@ -3290,7 +3296,7 @@ mkcd() {
     if [[ ! -d "$1" ]]; then
         command mkdir -p "$1"
     else
-        printf '`%s already exists: cd-ing.\n' "$1"
+        printf '`%s'\'' already exists: cd-ing.\n' "$1"
     fi
     builtin cd "$1"
 }
@@ -3695,5 +3701,3 @@ zrclocal
 # End:
 
 . ~/.zshrc.local
-
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
