@@ -16,11 +16,14 @@
         auto-complete
         csv-mode
         js2-mode
+        magit
 	))
 
 (el-get 'sync my:el-get-packages)
 
 (autoload 'geben "~/.emacs.d/geben/geben.el" "PHP Debugger on Emacs" t)
+
+(global-set-key (kbd "C-x g") 'magit-status)
 
 (require 'web-mode)
 (add-to-list 'auto-mode-alist '("\\.phtml\\'" . web-mode))
