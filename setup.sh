@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Config dir
-dir=~/stuff/configuration
+dir=/home/mstone/stuff/configuration
 
 
 # Emacs init.el
@@ -55,25 +55,3 @@ else
 	ln -s "${dir}/.zshrc.local" ~/.zshrc.local
 
 fi
-
-# coins-server.sh
-if [ -e /etc/init/coins-server.conf ]
-then
-
-	echo "File exists: coins-server.conf"
-
-else
-
-	if [ ! -d /etc/init ]
-	then
-
-		echo "Directory doesn't exist: /etc/init"
-
-	else
-
-		sudo ln -s "${dir}/coins-server.sh" /etc/init/coins-server.conf
-
-	fi
-
-fi
-
