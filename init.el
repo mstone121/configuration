@@ -1,1 +1,2 @@
-/home/mstone/stuff/configuration/init.el
+;; Save backups elsewhere
+(setq backup-directory-alist '(("." . "~/emacs-saves")))
