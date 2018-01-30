@@ -5,9 +5,32 @@ export EDITOR=emacs
 export SHELL=`which zsh`
 
 cgrep() {
-	grep -R $1 .
+    grep $2 -R $1 .
 }
 
 ngrep() {
-        grep -R --exclude-dir=node_modules $1 . 
+        grep $2 -R --exclude-dir=node_modules $1 .
+}
+
+# Coins shortcuts
+COINS_WEB_ROOT=/coins/www/html
+
+micis() {
+        cd $COINS_WEB_ROOT/micis
+}
+
+p2() {
+        cd $COINS_WEB_ROOT/p2
+}
+
+portals() {
+        cd $COINS_WEB_ROOT/portals
+}
+
+coins_core() {
+        cd $COINS_WEB_ROOT/coins_core
+}
+
+laravel() {
+        cd /var/www/html/coins
 }

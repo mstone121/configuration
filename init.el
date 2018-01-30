@@ -1,3 +1,10 @@
+
+;; Added by Package.el.  This must come before configurations of
+;; installed packages.  Don't delete this line.  If you don't want it,
+;; just comment it out by adding a semicolon to the start of the line.
+;; You may delete these explanatory comments.
+(package-initialize)
+
 (add-to-list 'load-path "~/.emacs.d/el-get/el-get")
 (add-to-list 'load-path "~/.emacs.d/geben/")
 
@@ -16,20 +23,15 @@
         auto-complete
         csv-mode
         js2-mode
-	))
+        flycheck))	
 
 (el-get 'sync my:el-get-packages)
 
 (autoload 'geben "~/.emacs.d/geben/geben.el" "PHP Debugger on Emacs" t)
 
 (require 'web-mode)
-(add-to-list 'auto-mode-alist '("\\.phtml\\'" . web-mode))
-(add-to-list 'auto-mode-alist '("\\.tpl\\.php\\'" . web-mode))
-(add-to-list 'auto-mode-alist '("\\.[agj]sp\\'" . web-mode))
-(add-to-list 'auto-mode-alist '("\\.as[cp]x\\'" . web-mode))
-(add-to-list 'auto-mode-alist '("\\.erb\\'" . web-mode))
-(add-to-list 'auto-mode-alist '("\\.mustache\\'" . web-mode))
-(add-to-list 'auto-mode-alist '("\\.djhtml\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.php\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.inc\\'" . web-mode))
 (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
 
 (setq web-mode-code-indent-offset   4)
@@ -57,6 +59,14 @@
   "Insert php print_r debug text."
   (interactive "*sPHP Var: ")
   (insert (concat "echo '<pre>'.print_r(" str ", true).'</pre>';")))
+
+(defun php-to-html ()
+  (replace-regexp "\s-*'\s-*\.\s-*\(.*\)\s-*\.\s-*'\s-*[^\s-+]" "<?php echo \1 ?>"))
+
+;; Javascript indent
+(custom-set-variables
+ '(js2-basic-offset 2)
+)
           
 
 ;; Save all tempfiles in $TMPDIR/emacs$UID/
@@ -87,3 +97,6 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+
+;; whitespace bad
+(add-hook 'before-save-hook 'whitespace-cleanup)
