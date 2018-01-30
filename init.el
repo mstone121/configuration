@@ -1,0 +1,1 @@
+/home/mstone/stuff/configuration/init.el
