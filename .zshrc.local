@@ -1,0 +1,13 @@
+# .zshrc additonal
+alias emacs='emacs -nw'
+alias sshcoins='ssh -p 2222 localcoin'
+export EDITOR=emacs
+export SHELL=`which zsh`
+
+cgrep() {
+	grep -R $1 .
+}
+
+ngrep() {
+        grep -R --exclude-dir=node_modules $1 . 
+}
